@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="6" fill="#2563eb"/>
+  <g fill="#ffffff">
+    <!-- Database cylinder -->
+    <ellipse cx="16" cy="8" rx="8" ry="3" fill="#ffffff"/>
+    <rect x="8" y="8" width="16" height="12" fill="#ffffff"/>
+    <ellipse cx="16" cy="20" rx="8" ry="3" fill="#ffffff"/>
+    
+    <!-- Vector arrows -->
+    <path d="M12 12 L14 10 L14 11 L16 11 L16 13 L14 13 L14 14 Z" fill="#2563eb"/>
+    <path d="M20 16 L18 18 L18 17 L16 17 L16 15 L18 15 L18 16 Z" fill="#2563eb"/>
+    <path d="M12 16 L14 14 L14 15 L16 15 L16 17 L14 17 L14 18 Z" fill="#2563eb"/>
+  </g>
+</svg>
