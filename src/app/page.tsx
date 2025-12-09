@@ -5,7 +5,8 @@ import {
   Database, Search, Settings, RotateCcw, BarChart3, 
   Trash2, Edit, Eye, MoreHorizontal, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, Maximize2, Activity, Server,
-  CheckCircle, AlertCircle, XCircle, Clock, Zap, Sun, Moon, Monitor
+  CheckCircle, AlertCircle, XCircle, Clock, Zap, Sun, Moon, Monitor,
+  LayoutGrid
 } from 'lucide-react';
 import { getCurrentDbType } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ import {
   CollectionDetail,
   IndexingStatus
 } from '@/types';
+import { DataBrowser } from '@/components/DataBrowser';
+import { ObjectPreview } from '@/components/DataBrowser';
 
 export default function Home() {
   const [classes, setClasses] = useState<DatabaseClass[]>([]);
@@ -480,445 +483,204 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Compact Header */}
-      <header className="border-b bg-card px-6 py-3">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <Database className="h-6 w-6 text-primary mr-2" />
-              <h1 className="text-xl font-bold">{dbType.charAt(0).toUpperCase() + dbType.slice(1)} Manager</h1>
-            </div>
-            <div className={`flex items-center space-x-2 px-2 py-1 rounded text-sm ${
-              isConnected 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button onClick={fetchStats} variant="ghost" size="sm">
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Refresh
-            </Button>
-            <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Settings</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-sm font-medium">Database Type</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <Button
-                        variant={dbType === 'weaviate' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleDbTypeChange('weaviate')}
-                        disabled={isDbSwitching}
-                        className="flex items-center space-x-2"
-                      >
-                        <Database className="h-4 w-4" />
-                        <span>Weaviate</span>
-                      </Button>
-                      <Button
-                        variant={dbType === 'qdrant' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleDbTypeChange('qdrant')}
-                        disabled={isDbSwitching}
-                        className="flex items-center space-x-2"
-                      >
-                        <Server className="h-4 w-4" />
-                        <span>Qdrant</span>
-                      </Button>
-                    </div>
-                    {isDbSwitching && (
-                      <div className="text-xs text-muted-foreground mt-2 flex items-center">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
-                        Switching database...
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium">Theme</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      <Button
-                        variant={theme === 'light' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleThemeChange('light')}
-                        className="flex items-center space-x-2"
-                      >
-                        <Sun className="h-4 w-4" />
-                        <span>Light</span>
-                      </Button>
-                      <Button
-                        variant={theme === 'dark' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleThemeChange('dark')}
-                        className="flex items-center space-x-2"
-                      >
-                        <Moon className="h-4 w-4" />
-                        <span>Dark</span>
-                      </Button>
-                      <Button
-                        variant={theme === 'system' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleThemeChange('system')}
-                        className="flex items-center space-x-2"
-                      >
-                        <Monitor className="h-4 w-4" />
-                        <span>System</span>
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium">Auto-refresh Statistics</Label>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <input
-                        type="checkbox"
-                        checked={autoRefresh}
-                        onChange={(e) => handleAutoRefreshChange(e.target.checked)}
-                        className="rounded"
-                      />
-                      <span className="text-sm">Enable auto-refresh</span>
-                    </div>
-                    {autoRefresh && (
-                      <div className="mt-3">
-                        <Label className="text-xs text-muted-foreground">Refresh Interval</Label>
-                        <select
-                          value={refreshInterval}
-                          onChange={(e) => handleRefreshIntervalChange(parseInt(e.target.value))}
-                          className="mt-1 block w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm"
-                        >
-                          <option value={15}>15 seconds</option>
-                          <option value={30}>30 seconds</option>
-                          <option value={60}>1 minute</option>
-                          <option value={120}>2 minutes</option>
-                          <option value={300}>5 minutes</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button variant="outline" onClick={() => setShowSettingsModal(false)}>
-                      Close
-                    </Button>
-                  </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        {/* Compact Header */}
+        <header className="border-b bg-card px-6 py-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <Database className="h-6 w-6 text-primary mr-2" />
+                  <h1 className="text-xl font-bold">{dbType.charAt(0).toUpperCase() + dbType.slice(1)} Manager</h1>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </header>
+                <div className={`flex items-center space-x-2 px-2 py-1 rounded text-sm ${
+                  isConnected 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  {isConnected ? 'Connected' : 'Disconnected'}
+                </div>
+              </div>
 
-      {/* Main Content with Tabs */}
-      <div className="flex-1 p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="stats" className="flex items-center">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Statistics
-            </TabsTrigger>
-            <TabsTrigger value="browser" className="flex items-center">
-              <Database className="h-4 w-4 mr-2" />
-              Data Browser
-            </TabsTrigger>
-          </TabsList>
+              {/* Navigation moved to App Bar */}
+              <TabsList className="ml-4">
+                <TabsTrigger value="stats" className="flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Statistics
+                </TabsTrigger>
+                <TabsTrigger value="browser" className="flex items-center">
+                  <Database className="h-4 w-4 mr-2" />
+                  Data Browser
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="flex items-center">
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Object Preview
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          {/* Data Browser Tab */}
-          <TabsContent value="browser" className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
-              {/* Classes Sidebar - Compact */}
-              <div className="col-span-3">
-                <Card className="h-full">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{dbType === 'weaviate' ? 'Classes' : 'Collections'}</CardTitle>
-                      <div className="flex space-x-1">
-                        <Button onClick={fetchClasses} size="sm" variant="ghost">
-                          <RotateCcw className="h-3 w-3" />
+            <div className="flex items-center space-x-2">
+              <Button onClick={fetchStats} variant="ghost" size="sm">
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+              <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Settings</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-sm font-medium">Database Type</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <Button
+                          variant={dbType === 'weaviate' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleDbTypeChange('weaviate')}
+                          disabled={isDbSwitching}
+                          className="flex items-center space-x-2"
+                        >
+                          <Database className="h-4 w-4" />
+                          <span>Weaviate</span>
+                        </Button>
+                        <Button
+                          variant={dbType === 'qdrant' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleDbTypeChange('qdrant')}
+                          disabled={isDbSwitching}
+                          className="flex items-center space-x-2"
+                        >
+                          <Server className="h-4 w-4" />
+                          <span>Qdrant</span>
+                        </Button>
+                      </div>
+                      {isDbSwitching && (
+                        <div className="text-xs text-muted-foreground mt-2 flex items-center">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
+                          Switching database...
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium">Theme</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <Button
+                          variant={theme === 'light' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleThemeChange('light')}
+                          className="flex items-center space-x-2"
+                        >
+                          <Sun className="h-4 w-4" />
+                          <span>Light</span>
+                        </Button>
+                        <Button
+                          variant={theme === 'dark' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleThemeChange('dark')}
+                          className="flex items-center space-x-2"
+                        >
+                          <Moon className="h-4 w-4" />
+                          <span>Dark</span>
+                        </Button>
+                        <Button
+                          variant={theme === 'system' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleThemeChange('system')}
+                          className="flex items-center space-x-2"
+                        >
+                          <Monitor className="h-4 w-4" />
+                          <span>System</span>
                         </Button>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="py-0">
-                    <ScrollArea className="h-[calc(100vh-320px)]">
-                      <div className="space-y-1">
-                        {loading ? (
-                          [...Array(3)].map((_, i) => (
-                            <div key={i} className="h-8 bg-muted rounded animate-pulse" />
-                          ))
-                        ) : (
-                          classes.map((cls: DatabaseClass) => (
-                            <div key={cls.class} className="flex items-center justify-between">
-                              <Button
-                                onClick={() => handleClassSelect(cls.class)}
-                                variant={selectedClass === cls.class ? "default" : "ghost"}
-                                size="sm"
-                                className="flex-1 justify-start text-sm"
-                              >
-                                {cls.class}
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  <DropdownMenuItem onClick={() => handleClassSelect(cls.class)}>
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Objects
-                                  </DropdownMenuItem>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                        <Trash2 className="h-4 w-4 mr-2" />
-                                        Delete {dbType === 'weaviate' ? 'Class' : 'Collection'}
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete {dbType === 'weaviate' ? 'Class' : 'Collection'}</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to delete the &quot;{cls.class}&quot; {dbType === 'weaviate' ? 'class' : 'collection'}? This will permanently delete all objects in this {dbType === 'weaviate' ? 'class' : 'collection'}.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteClass(cls.class)}>
-                                          Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          ))
-                        )}
+                    
+                    <div>
+                      <Label className="text-sm font-medium">Auto-refresh Statistics</Label>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <input
+                          type="checkbox"
+                          checked={autoRefresh}
+                          onChange={(e) => handleAutoRefreshChange(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">Enable auto-refresh</span>
                       </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Objects Panel - Enhanced */}
-              <div className="col-span-9">
-                <Card className="h-full flex flex-col">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CardTitle className="text-lg">
-                          {selectedClass ? `${selectedClass}` : `Select a ${dbType === 'weaviate' ? 'class' : 'collection'}`}
-                        </CardTitle>
-                        {selectedClass && (
-                          <Badge variant="secondary">
-                            {pagination.totalItems} objects
-                          </Badge>
-                        )}
-                        {searchQuery && (
-                          <Badge variant="outline">
-                            Search: &quot;{searchQuery}&quot;
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {selectedObjects.size > 0 && (
-                          <Button onClick={handleBulkDelete} variant="destructive" size="sm">
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete ({selectedObjects.size})
-                          </Button>
-                        )}
-                        <div className="flex items-center space-x-1">
-                          <Input
-                            placeholder="Search objects..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-48"
-                          />
-                          <Button 
-                            onClick={handleSearch}
-                            disabled={!selectedClass || isSearching}
-                            variant="outline"
-                            size="sm"
+                      {autoRefresh && (
+                        <div className="mt-3">
+                          <Label className="text-xs text-muted-foreground">Refresh Interval</Label>
+                          <select
+                            value={refreshInterval}
+                            onChange={(e) => handleRefreshIntervalChange(parseInt(e.target.value))}
+                            className="mt-1 block w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm text-sm"
                           >
-                            <Search className="h-4 w-4" />
-                          </Button>
-                          {searchQuery && (
-                            <Button 
-                              onClick={clearSearch}
-                              variant="ghost"
-                              size="sm"
-                            >
-                              Clear
-                            </Button>
-                          )}
+                            <option value={15}>15 seconds</option>
+                            <option value={30}>30 seconds</option>
+                            <option value={60}>1 minute</option>
+                            <option value={120}>2 minutes</option>
+                            <option value={300}>5 minutes</option>
+                          </select>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="py-0 flex-1 flex flex-col">
-                    {selectedClass ? (
-                      <>
-                        <div className="flex-1 overflow-hidden">
-                          <ScrollArea className="h-[calc(100vh-430px)]">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-12">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedObjects.size === objects.length && objects.length > 0}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          setSelectedObjects(new Set(objects.map(obj => obj.id)));
-                                        } else {
-                                          setSelectedObjects(new Set());
-                                        }
-                                      }}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="w-32">ID</TableHead>
-                                  <TableHead>Properties</TableHead>
-                                  <TableHead className="w-32">Actions</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {objects.map((obj: DatabaseObject, index) => (
-                                  <TableRow key={obj.id || index}>
-                                    <TableCell>
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedObjects.has(obj.id)}
-                                        onChange={() => toggleObjectSelection(obj.id)}
-                                      />
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs">
-                                      {obj.id?.slice(0, 8)}...
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="text-xs bg-muted p-2 rounded w-full">
-                                        <pre className="whitespace-pre-wrap text-xs break-all">
-                                          {searchQuery ? 
-                                            highlightSearchText(formatObjectProperties(obj.properties), searchQuery) :
-                                            formatObjectProperties(obj.properties)
-                                          }
-                                        </pre>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex space-x-1">
-                                        <Button 
-                                          onClick={() => handleViewObject(obj)}
-                                          variant="outline"
-                                          size="sm"
-                                          title="View Details"
-                                        >
-                                          <Maximize2 className="h-3 w-3" />
-                                        </Button>
-                                        <Button 
-                                          onClick={() => handleEditObject(obj)}
-                                          variant="outline"
-                                          size="sm"
-                                          title="Edit"
-                                        >
-                                          <Edit className="h-3 w-3" />
-                                        </Button>
-                                        <Button 
-                                          onClick={() => handleDeleteObject(obj.id)}
-                                          variant="destructive"
-                                          size="sm"
-                                          title="Delete"
-                                        >
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                            {objects.length === 0 && (
-                              <div className="text-center py-12 text-muted-foreground">
-                                <Database className="mx-auto h-12 w-12 mb-4" />
-                                <p>{searchQuery ? 'No matching objects found' : 'No objects found'}</p>
-                              </div>
-                            )}
-                          </ScrollArea>
-                        </div>
-                        
-                        {/* Pagination Controls */}
-                        {pagination.totalPages > 1 && (
-                          <div className="mt-4 flex items-center justify-between border-t pt-4">
-                            <div className="text-sm text-muted-foreground">
-                              Page {pagination.currentPage} of {pagination.totalPages}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                onClick={() => handlePageChange(1)}
-                                disabled={pagination.currentPage === 1}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <ChevronsLeft className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                disabled={pagination.currentPage === 1}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <span className="px-4 py-2 text-sm">
-                                {pagination.currentPage}
-                              </span>
-                              <Button
-                                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                disabled={pagination.currentPage === pagination.totalPages}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handlePageChange(pagination.totalPages)}
-                                disabled={pagination.currentPage === pagination.totalPages}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <ChevronsRight className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground flex-1 flex items-center justify-center">
-                        <div>
-                          <Database className="mx-auto h-12 w-12 mb-4" />
-                          <p>Select a {dbType === 'weaviate' ? 'class' : 'collection'} to view objects</p>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                    
+                    <div className="flex justify-end">
+                      <Button variant="outline" onClick={() => setShowSettingsModal(false)}>
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+          </div>
+        </header>
+
+        {/* Main Content with Tabs */}
+        <div className="flex-1 p-6 overflow-hidden">
+          
+          {/* Data Browser Tab */}
+          <TabsContent value="browser" className="h-full mt-0">
+            <DataBrowser 
+              classes={classes}
+              selectedClass={selectedClass}
+              objects={objects}
+              loading={loading}
+              pagination={pagination}
+              searchQuery={searchQuery}
+              isSearching={isSearching}
+              selectedObjects={selectedObjects}
+              dbType={dbType}
+              onClassSelect={handleClassSelect}
+              onSearchChange={setSearchQuery}
+              onSearch={handleSearch}
+              onClearSearch={clearSearch}
+              onPageChange={handlePageChange}
+              onRefreshClasses={fetchClasses}
+              onDeleteClass={handleDeleteClass}
+              onViewObject={handleViewObject}
+              onEditObject={handleEditObject}
+              onDeleteObject={handleDeleteObject}
+              onBulkDelete={handleBulkDelete}
+              onToggleSelection={toggleObjectSelection}
+              onSelectAll={(checked) => {
+                if (checked) {
+                  setSelectedObjects(new Set(objects.map(obj => obj.id)));
+                } else {
+                  setSelectedObjects(new Set());
+                }
+              }}
+            />
           </TabsContent>
 
           {/* Statistics Tab */}
-          <TabsContent value="stats" className="space-y-4">
+          <TabsContent value="stats" className="space-y-4 mt-0 overflow-auto h-full pb-20">
             {/* Basic Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
@@ -1288,8 +1050,8 @@ export default function Home() {
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
 
       {/* View Object Modal */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
