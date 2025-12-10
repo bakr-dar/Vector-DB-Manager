@@ -1055,11 +1055,11 @@ export default function Home() {
 
       {/* View Object Modal */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="sm:max-w-[60vw] sm:max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Object Details</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
+          <ScrollArea className="max-h-[80vh]">
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Object ID</Label>
@@ -1069,25 +1069,58 @@ export default function Home() {
               </div>
               <div>
                 <Label className="text-sm font-medium">Properties</Label>
-                <div className="mt-1 p-4 bg-muted rounded">
-                  <pre className="text-sm whitespace-pre-wrap">
-                    {searchQuery ? 
-                      highlightSearchText(JSON.stringify(viewingObject?.properties, null, 2), searchQuery) :
-                      JSON.stringify(viewingObject?.properties, null, 2)
-                    }
-                  </pre>
+                <div className="mt-1 border rounded-md divide-y">
+                  {viewingObject?.properties && Object.entries(viewingObject.properties).map(([key, value]) => (
+                    <div key={key} className="flex flex-col sm:flex-row p-3 hover:bg-muted/50">
+                      <div className="sm:w-1/4 font-medium text-sm text-muted-foreground mb-1 sm:mb-0 pr-4">
+                        {key}
+                      </div>
+                      <div className="sm:w-3/4 text-sm break-all">
+                        {typeof value === 'object' && value !== null ? (
+                          <pre className="whitespace-pre-wrap font-mono text-xs bg-muted p-2 rounded">
+                            {searchQuery ? 
+                              highlightSearchText(JSON.stringify(value, null, 2), searchQuery) :
+                              JSON.stringify(value, null, 2)
+                            }
+                          </pre>
+                        ) : (
+                          searchQuery ? 
+                            highlightSearchText(String(value), searchQuery) :
+                            String(value)
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {(!viewingObject?.properties || Object.keys(viewingObject.properties).length === 0) && (
+                    <div className="p-4 text-sm text-muted-foreground text-center">No properties found</div>
+                  )}
                 </div>
               </div>
               {viewingObject?._additional && (
                 <div>
                   <Label className="text-sm font-medium">Additional Information</Label>
-                  <div className="mt-1 p-4 bg-muted rounded">
-                    <pre className="text-sm whitespace-pre-wrap">
-                      {searchQuery ? 
-                        highlightSearchText(JSON.stringify(viewingObject._additional, null, 2), searchQuery) :
-                        JSON.stringify(viewingObject._additional, null, 2)
-                      }
-                    </pre>
+                  <div className="mt-1 border rounded-md divide-y">
+                    {Object.entries(viewingObject._additional).map(([key, value]) => (
+                      <div key={key} className="flex flex-col sm:flex-row p-3 hover:bg-muted/50">
+                        <div className="sm:w-1/4 font-medium text-sm text-muted-foreground mb-1 sm:mb-0 pr-4">
+                          {key}
+                        </div>
+                        <div className="sm:w-3/4 text-sm break-all">
+                          {typeof value === 'object' && value !== null ? (
+                            <pre className="whitespace-pre-wrap font-mono text-xs bg-muted p-2 rounded">
+                              {searchQuery ? 
+                                highlightSearchText(JSON.stringify(value, null, 2), searchQuery) :
+                                JSON.stringify(value, null, 2)
+                              }
+                            </pre>
+                          ) : (
+                            searchQuery ? 
+                              highlightSearchText(String(value), searchQuery) :
+                              String(value)
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -265,13 +265,38 @@ export function DataBrowser({
                               className="cursor-pointer hover:bg-muted/50"
                               onClick={() => onViewObject(obj)}
                             >
-                              <div className="text-sm bg-muted p-4 rounded w-full">
-                                <pre className="whitespace-pre-wrap text-smbreak-all">
-                                  {searchQuery ? 
-                                    highlightSearchText(formatObjectProperties(obj.properties), searchQuery) :
-                                    formatObjectProperties(obj.properties)
-                                  }
-                                </pre>
+                              <div className="text-sm bg-muted rounded w-full border divide-y">
+                                {obj.properties && (() => {
+                                  const contentKeys = ['page_content', 'pageContent', 'content', 'text', 'body'];
+                                  const entries = Object.entries(obj.properties);
+                                  const contentEntry = entries.find(([key]) => contentKeys.includes(key));
+                                  const displayEntries = contentEntry ? [contentEntry] : entries;
+                                  
+                                  return displayEntries.map(([key, value]) => (
+                                    <div key={key} className="flex flex-col p-2 hover:bg-muted/80">
+                                      <div className="w-full text-xs break-words">
+                                        {typeof value === 'object' && value !== null ? (
+                                          <pre className="whitespace-pre-wrap font-mono text-[10px] bg-background/50 p-2 rounded max-h-[500px] overflow-y-auto">
+                                            {searchQuery ? 
+                                              highlightSearchText(JSON.stringify(value, null, 2), searchQuery) :
+                                              JSON.stringify(value, null, 2)
+                                            }
+                                          </pre>
+                                        ) : (
+                                          <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto p-1">
+                                            {searchQuery ? 
+                                              highlightSearchText(String(value), searchQuery) :
+                                              String(value)
+                                            }
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ));
+                                })()}
+                                {(!obj.properties || Object.keys(obj.properties).length === 0) && (
+                                  <div className="p-2 text-xs text-muted-foreground text-center">No properties</div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
