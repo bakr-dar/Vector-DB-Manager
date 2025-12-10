@@ -6,7 +6,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -70,19 +69,6 @@ export function DataBrowser({
     }
   };
 
-  const formatObjectProperties = (properties: Record<string, unknown>) => {
-    if (!properties) return 'No properties';
-    const formatted = Object.entries(properties)
-      .map(([key, value]) => {
-        if (typeof value === 'string' && value.length > 100) {
-          return `${key}: "${value.substring(0, 300)}..."`;
-        }
-        return `${key}: ${JSON.stringify(value)}`;
-      })
-      .join('\n');
-    return formatted || 'Empty object';
-  };
-
   const highlightSearchText = (text: string, searchTerm: string): React.JSX.Element => {
     if (!searchTerm || !text) return <span>{text}</span>;
     const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
@@ -96,6 +82,48 @@ export function DataBrowser({
       </span>
     );
   };
+
+  const renderObjectCard = (obj: DatabaseObject, index: number) => (
+    <div 
+      key={obj.id || index}
+      className="cursor-pointer hover:bg-muted/50 border rounded-lg overflow-hidden"
+      onClick={() => onViewObject(obj)}
+    >
+      <div className="text-sm bg-muted w-full divide-y">
+        {obj.properties && (() => {
+          const contentKeys = ['page_content', 'pageContent', 'content', 'text', 'body'];
+          const entries = Object.entries(obj.properties);
+          const contentEntry = entries.find(([key]) => contentKeys.includes(key));
+          const displayEntries = contentEntry ? [contentEntry] : entries;
+          
+          return displayEntries.map(([key, value]) => (
+            <div key={key} className="flex flex-col p-2 hover:bg-muted/80">
+              <div className="w-full text-xs break-words">
+                {typeof value === 'object' && value !== null ? (
+                  <pre className="whitespace-pre-wrap font-mono text-[10px] bg-background/50 p-2 rounded max-h-[500px] overflow-y-auto">
+                    {searchQuery ? 
+                      highlightSearchText(JSON.stringify(value, null, 2), searchQuery) :
+                      JSON.stringify(value, null, 2)
+                    }
+                  </pre>
+                ) : (
+                  <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto p-1">
+                    {searchQuery ? 
+                      highlightSearchText(String(value), searchQuery) :
+                      String(value)
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+          ));
+        })()}
+        {(!obj.properties || Object.keys(obj.properties).length === 0) && (
+          <div className="p-2 text-xs text-muted-foreground text-center">No properties</div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex gap-4 h-[calc(100vh-140px)]">
@@ -210,11 +238,6 @@ export function DataBrowser({
                     </Button>
                   </div>
                 )}
-                {selectedObjects.size > 0 && (
-                  <Button onClick={onBulkDelete} variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete ({selectedObjects.size})
-                  </Button>
-                )}
                 <div className="flex items-center space-x-1">
                   <Input
                     placeholder="Search objects..."
@@ -235,78 +258,14 @@ export function DataBrowser({
           </CardHeader>
           <CardContent className="py-0 flex-1 flex flex-col min-h-0">
             {selectedClass ? (
-              <>
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-[calc(100vh-250px)]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <input
-                              type="checkbox"
-                              checked={selectedObjects.size === objects.length && objects.length > 0}
-                              onChange={(e) => onSelectAll(e.target.checked)}
-                            />
-                          </TableHead>
-                          <TableHead>Properties</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {objects.map((obj, index) => (
-                          <TableRow key={obj.id || index}>
-                            <TableCell>
-                              <input
-                                type="checkbox"
-                                checked={selectedObjects.has(obj.id)}
-                                onChange={() => onToggleSelection(obj.id)}
-                              />
-                            </TableCell>
-                            <TableCell 
-                              className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => onViewObject(obj)}
-                            >
-                              <div className="text-sm bg-muted rounded w-full border divide-y">
-                                {obj.properties && (() => {
-                                  const contentKeys = ['page_content', 'pageContent', 'content', 'text', 'body'];
-                                  const entries = Object.entries(obj.properties);
-                                  const contentEntry = entries.find(([key]) => contentKeys.includes(key));
-                                  const displayEntries = contentEntry ? [contentEntry] : entries;
-                                  
-                                  return displayEntries.map(([key, value]) => (
-                                    <div key={key} className="flex flex-col p-2 hover:bg-muted/80">
-                                      <div className="w-full text-xs break-words">
-                                        {typeof value === 'object' && value !== null ? (
-                                          <pre className="whitespace-pre-wrap font-mono text-[10px] bg-background/50 p-2 rounded max-h-[500px] overflow-y-auto">
-                                            {searchQuery ? 
-                                              highlightSearchText(JSON.stringify(value, null, 2), searchQuery) :
-                                              JSON.stringify(value, null, 2)
-                                            }
-                                          </pre>
-                                        ) : (
-                                          <div className="whitespace-pre-wrap max-h-[300px] overflow-y-auto p-1">
-                                            {searchQuery ? 
-                                              highlightSearchText(String(value), searchQuery) :
-                                              String(value)
-                                            }
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ));
-                                })()}
-                                {(!obj.properties || Object.keys(obj.properties).length === 0) && (
-                                  <div className="p-2 text-xs text-muted-foreground text-center">No properties</div>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
-                </div>
-
-              </>
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-[calc(100vh-250px)]">
+                  {/* Grid layout: 1 column on small screens, 2 columns on large screens */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+                    {objects.map((obj, index) => renderObjectCard(obj, index))}
+                  </div>
+                </ScrollArea>
+              </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground flex-1 flex items-center justify-center">
                 <div>

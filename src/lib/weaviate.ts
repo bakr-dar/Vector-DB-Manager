@@ -44,21 +44,35 @@ class WeaviateService {
 
   async getClassObjects(className: string, limit: number = 20, offset: number = 0) {
     try {
-      const query = this.client.data
-        .getter()
+      // Use GraphQL for efficient pagination with offset
+      const properties = await this.getClassProperties(className);
+      const propertyFields = properties.map(p => p.name).join(' ');
+      
+      const builder = this.client.graphql
+        .get()
         .withClassName(className)
-        .withLimit(Math.min(limit + offset, 1000)); // Cap at 1000 to prevent memory issues
-
-      const result = await query.do();
-      const allObjects = result.objects || [];
-
-      // Client-side pagination
+        .withLimit(limit);
+      
       if (offset > 0) {
-        console.warn(`Weaviate: Offset not natively supported, using client-side pagination (offset=${offset}, limit=${limit})`);
+        builder.withOffset(offset);
       }
-      const paginatedObjects = allObjects.slice(offset, offset + limit);
 
-      return paginatedObjects;
+      if (propertyFields) {
+        builder.withFields(`_additional { id } ${propertyFields}`);
+      } else {
+        builder.withFields(`_additional { id }`);
+      }
+
+      const result = await builder.do();
+      const objects = result.data?.Get?.[className] || [];
+      
+      return objects.map((obj: any) => ({
+        id: obj._additional?.id,
+        properties: Object.fromEntries(
+          properties.map(p => [p.name, obj[p.name]]).filter(([, value]) => value !== undefined)
+        ),
+        _additional: obj._additional
+      }));
     } catch (error) {
       console.error(`Error fetching objects for class ${className}:`, error);
       return [];
