@@ -46,7 +46,25 @@ class WeaviateService {
     try {
       // Use GraphQL for efficient pagination with offset
       const properties = await this.getClassProperties(className);
-      const propertyFields = properties.map(p => p.name).join(' ');
+      
+      // Build property fields, handling nested object types
+      const propertyFields = properties.map(p => {
+        const dataType = Array.isArray(p.dataType) ? p.dataType[0] : p.dataType;
+        
+        // Check if this is a nested object type
+        // Object types typically start with the className followed by underscore
+        // Primitive types: string, text, int, number, boolean, date, uuid, geoCoordinates, phoneNumber
+        const primitiveTypes = ['string', 'text', 'int', 'number', 'boolean', 'date', 'uuid', 'geoCoordinates', 'phoneNumber'];
+        
+        if (typeof dataType === 'string' && !primitiveTypes.includes(dataType.toLowerCase())) {
+          // This is likely a nested object type - skip it to avoid GraphQL errors
+          // Alternatively, you could try to introspect and expand it
+          console.log(`Skipping nested object property: ${p.name} of type ${dataType}`);
+          return null;
+        }
+        
+        return p.name;
+      }).filter(Boolean).join(' ');
       
       const builder = this.client.graphql
         .get()
@@ -75,7 +93,7 @@ class WeaviateService {
       }));
     } catch (error) {
       console.error(`Error fetching objects for class ${className}:`, error);
-      return [];
+      throw error;
     }
   }
 
