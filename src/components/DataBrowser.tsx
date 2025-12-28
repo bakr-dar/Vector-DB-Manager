@@ -91,7 +91,7 @@ const renderObjectCard = (obj: DatabaseObject, index: number) => (
   >
     <div className="text-sm bg-muted w-full divide-y">
       {obj.properties && (() => {
-        const contentKeys = ['page_content', 'pageContent', 'content', 'text', 'body'];
+        const contentKeys = ['page_content', 'pageContent', 'content', 'body'];
         const entries = Object.entries(obj.properties);
         const contentEntry = entries.find(([key]) => contentKeys.includes(key));
         const displayEntries = contentEntry ? [contentEntry] : [];

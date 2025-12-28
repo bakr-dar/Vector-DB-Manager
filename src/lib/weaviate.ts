@@ -89,7 +89,6 @@ class WeaviateService {
         properties: Object.fromEntries(
           properties.map(p => [p.name, obj[p.name]]).filter(([, value]) => value !== undefined)
         ),
-        _additional: obj._additional
       }));
     } catch (error) {
       console.error(`Error fetching objects for class ${className}:`, error);
